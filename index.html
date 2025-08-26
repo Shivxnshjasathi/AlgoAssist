@@ -6,6 +6,8 @@
     <title>Codex</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -139,12 +141,8 @@
             40% { transform: scale(1.0); }
         }
 
-        #response-container {
-            transition: opacity 0.5s ease-in-out;
-        }
-
         /* Styling for Markdown-generated content */
-        .markdown-content pre, #code-editor {
+        .markdown-content pre {
             background-color: #0c0a18;
             border: 1px solid #374151;
             border-radius: 0.75rem;
@@ -169,13 +167,20 @@
             padding: 0;
         }
         .markdown-content h3 {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             font-weight: 600;
             margin-top: 1.75rem;
             margin-bottom: 1rem;
             color: #c4b5fd;
             border-bottom: 1px solid #4b5563;
             padding-bottom: 0.5rem;
+        }
+         .markdown-content h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #a78bfa;
         }
         .markdown-content ul {
             list-style-type: disc;
@@ -197,6 +202,47 @@
             color: #c4b5fd;
             background-color: rgba(99, 102, 241, 0.2);
         }
+        
+        .sub-nav-link {
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .sub-nav-link.active {
+            color: #c4b5fd;
+            border-bottom-color: #c4b5fd;
+        }
+
+
+        /* --- NEW ANIMATIONS --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Content reveal animation */
+        .content-reveal {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        .content-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
     </style>
 </head>
 <body class="text-gray-200 flex sm:items-center justify-center p-0 sm:p-4">
@@ -221,7 +267,7 @@
                     <div class="flex space-x-1 sm:space-x-2 bg-gray-900/50 p-1 rounded-full border border-gray-700">
                         <button class="nav-link active px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="home">Home</button>
                         <button class="nav-link px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="solver">Solver</button>
-                        <button class="nav-link px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="practice">Practice</button>
+                        <button class="nav-link px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="interview">Interview Prep</button>
                     </div>
                 </div>
             </nav>
@@ -229,7 +275,7 @@
             <!-- Page Content -->
             <main id="app-content">
                 <!-- Home Page (Landing Page) -->
-                <div id="home-page" class="p-4 sm:p-6 md:p-10">
+                <div id="home-page" class="page p-4 sm:p-6 md:p-10">
                     <div class="text-center">
                         <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">Your Personal AI Coding Assistant</h2>
                         <p class="mt-4 sm:mt-6 text-base sm:text-lg leading-8 text-gray-300">Stuck on a problem? Get comprehensive, step-by-step solution guides instantly. Understand the logic, explore different approaches, and master data structures and algorithms.</p>
@@ -256,14 +302,14 @@
                 </div>
 
                 <!-- Solver Page -->
-                <div id="solver-page" class="p-4 sm:p-6 md:p-8 hidden">
+                <div id="solver-page" class="page p-4 sm:p-6 md:p-8 hidden">
                     <div class="space-y-6">
                         <div class="relative">
                             <label for="problem-number-input" class="block text-sm font-medium text-gray-400 mb-2">LeetCode Problem Number</label>
                             <div class="absolute inset-y-0 left-0 top-7 flex items-center pl-4 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><hash class="lucide lucide-hash" /><path d="M4 9h16"/><path d="M4 15h16"/><path d="M9 4v16"/><path d="M15 4v16"/></svg>
                             </div>
-                            <input type="text" id="problem-number-input" class="w-full bg-gray-900/70 border border-gray-700 rounded-xl p-4 pl-11 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="e.g., 206">
+                            <input type="text" id="problem-number-input" class="w-full bg-gray-900/70 border border-gray-700 rounded-xl p-4 pl-11 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
                         </div>
 
                         <div class="relative">
@@ -282,74 +328,126 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1">
                             <button id="solve-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 px-4 rounded-xl transition duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-600/30">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                                 Get Solution Guide
                             </button>
-                            <button id="youtube-btn" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-4 px-4 rounded-xl transition duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500 flex items-center justify-center shadow-lg shadow-red-600/30 hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
-                                Watch Video Solution
-                            </button>
                         </div>
                     </div>
-                     <div id="response-container" class="mt-8 border-t border-white/10 pt-8 hidden opacity-0">
+                     <div id="response-container" class="mt-8 border-t border-white/10 pt-8 hidden content-reveal">
                          <div id="loading-indicator" class="flex items-center space-x-2 hidden">
                             <div class="ai-thinking-dot"></div>
                             <div class="ai-thinking-dot"></div>
                             <div class="ai-thinking-dot"></div>
                             <span class="text-gray-400">AI is generating a full solution guide...</span>
                         </div>
-                        <div id="response-header" class="flex justify-between items-center mb-4 hidden">
+                        <div id="response-header" class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 hidden">
                             <h3 class="text-lg font-semibold text-gray-300">Solution Guide</h3>
-                            <button id="tts-btn" class="flex items-center text-gray-400 hover:text-white transition-colors p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/70">
-                                <svg id="tts-play-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                <svg id="tts-stop-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="6" width="12" height="12"></rect></svg>
-                                <span class="ml-2 text-sm font-medium">Read Aloud</span>
-                            </button>
+                            <div class="flex items-center space-x-2">
+                                <button id="tts-btn" class="flex items-center text-gray-400 hover:text-white transition-colors p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/70">
+                                    <svg id="tts-play-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    <svg id="tts-stop-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="6" width="12" height="12"></rect></svg>
+                                </button>
+                                <button id="youtube-btn" class="flex items-center text-gray-400 hover:text-white transition-colors p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/70">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-0"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
+                                </button>
+                                <button id="pdf-btn" class="flex items-center text-gray-400 hover:text-white transition-colors p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/70">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <div id="ai-response" class="text-gray-300 leading-relaxed max-w-none markdown-content"></div>
                     </div>
                 </div>
                 
-                <!-- Practice Page -->
-                <div id="practice-page" class="p-4 sm:p-6 md:p-8 hidden">
+                <!-- Interview Prep Page -->
+                <div id="interview-prep-page" class="page p-4 sm:p-6 md:p-8 hidden">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h2 class="text-2xl font-bold text-white">Practice Arena</h2>
-                        <div class="flex items-center space-x-4 w-full sm:w-auto">
-                             <button id="run-code-btn" class="w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-xl transition duration-300 ease-in-out flex items-center justify-center">
-                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                                 Run Code
-                             </button>
-                            <button id="suggest-problem-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl transition duration-300 ease-in-out flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m10.4 12.6-1.8 2.4 1.8 2.4"></path><path d="m13.6 17.4 1.8-2.4-1.8-2.4"></path></svg>
-                                New Problem
+                        <h2 class="text-2xl font-bold text-white">Interview Prep</h2>
+                        <div class="flex space-x-2 border-b border-gray-700">
+                            <button class="sub-nav-link active py-2 px-4 text-gray-300" data-view="questions">Practice Questions</button>
+                            <button class="sub-nav-link py-2 px-4 text-gray-500" data-view="guide">Preparation Guide</button>
+                        </div>
+                    </div>
+
+                    <!-- View for Practice Questions -->
+                    <div id="questions-view">
+                        <div class="space-y-4 sm:space-y-0 sm:flex sm:space-x-4 mb-6">
+                            <input type="text" id="company-input" class="w-full bg-gray-900/70 border border-gray-700 rounded-xl p-4 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Company Name (e.g., Flipkart)">
+                            <input type="text" id="role-input" class="w-full bg-gray-900/70 border border-gray-700 rounded-xl p-4 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Role (e.g., SDE 1)">
+                            <button id="get-questions-btn" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 px-6 rounded-xl transition duration-300 ease-in-out flex items-center justify-center">
+                                Get Questions
                             </button>
                         </div>
+                        <div id="questions-display" class="p-6 bg-gray-900/30 rounded-2xl border border-white/10 content-reveal visible">
+                            <div id="questions-loading" class="hidden items-center space-x-2">
+                                <div class="ai-thinking-dot"></div>
+                                <div class="ai-thinking-dot"></div>
+                                <div class="ai-thinking-dot"></div>
+                                <span class="text-gray-400">Finding questions for you...</span>
+                            </div>
+                            <div id="questions-content" class="markdown-content">
+                                <h3 class="text-xl font-semibold text-indigo-300">Get Started</h3>
+                                <p class="mt-2 text-gray-400">Enter a company and role to get a list of targeted interview questions.</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="problem-display" class="mb-6 p-6 bg-gray-900/30 rounded-2xl border border-white/10">
-                        <div id="problem-loading" class="hidden items-center space-x-2">
-                            <div class="ai-thinking-dot"></div>
-                            <div class="ai-thinking-dot"></div>
-                            <div class="ai-thinking-dot"></div>
-                            <span class="text-gray-400">Finding a new problem for you...</span>
-                        </div>
-                        <div id="problem-content" class="markdown-content">
-                            <h3 id="problem-title" class="text-xl font-semibold text-indigo-300">Welcome!</h3>
-                            <div id="problem-description" class="mt-2 text-gray-400">Click the "New Problem" button to get a random coding challenge.</div>
-                        </div>
-                    </div>
+                    <!-- View for Preparation Guide -->
+                    <div id="guide-view" class="hidden markdown-content">
+                        <h3>The Ultimate Interview Preparation Guide</h3>
+                        
+                        <h4>1. Master Data Structures & Algorithms (DSA)</h4>
+                        <p>This is the foundation of most technical interviews. You should be able to understand, implement, and analyze the complexity of the following:</p>
+                        <ul>
+                            <li><strong>Arrays & Strings:</strong> Sorting, searching, two pointers, sliding window.</li>
+                            <li><strong>Linked Lists:</strong> Singly, Doubly, fast & slow pointers.</li>
+                            <li><strong>Stacks & Queues:</strong> Know their use cases (e.g., for DFS/BFS).</li>
+                            <li><strong>Trees:</strong> Binary Trees, Binary Search Trees (BSTs), Traversals (In-order, Pre-order, Post-order, Level-order).</li>
+                            <li><strong>Heaps:</strong> Min-Heap, Max-Heap, common problems like finding Kth largest element.</li>
+                            <li><strong>Graphs:</strong> Representations (Adjacency List/Matrix), Traversals (BFS, DFS), common algorithms like Dijkstra's and Topological Sort.</li>
+                            <li><strong>Tries:</strong> For string-related problems.</li>
+                            <li><strong>Dynamic Programming:</strong> Understand the concepts of memoization and tabulation. Practice common patterns.</li>
+                        </ul>
 
-                    <div class="mb-6">
-                        <label for="code-editor" class="block text-sm font-medium text-gray-400 mb-2">Your Solution</label>
-                        <textarea id="code-editor" class="w-full h-64 bg-gray-900/70 border border-gray-700 rounded-xl p-4 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Write your code here..."></textarea>
+                        <h4>2. Understand Big O Notation</h4>
+                        <p>For every algorithm you write, you must be able to analyze its time and space complexity. This is a critical part of the evaluation.</p>
+
+                        <h4>3. Practice Problem Solving Patterns</h4>
+                        <p>Don't just solve random problems. Identify common patterns that can be applied to a wide range of questions. Some key patterns include:</p>
+                        <ul>
+                            <li>Two Pointers</li>
+                            <li>Sliding Window</li>
+                            <li>Fast & Slow Pointers (Linked Lists)</li>
+                            <li>Merge Intervals</li>
+                            <li>Topological Sort (Graphs)</li>
+                            <li>Depth-First Search (DFS) & Breadth-First Search (BFS)</li>
+                        </ul>
+
+                        <h4>4. System Design Fundamentals</h4>
+                        <p>For mid-level and senior roles, system design is crucial. Even for junior roles, basic knowledge is expected. Study:</p>
+                        <ul>
+                            <li><strong>Core Concepts:</strong> Scalability, availability, reliability, latency, throughput.</li>
+                            <li><strong>Building Blocks:</strong> Load Balancers, CDNs, Databases (SQL vs. NoSQL), Caching, Message Queues.</li>
+                            <li><strong>Design Patterns:</strong> Practice designing common systems like a URL shortener, a social media feed, or a ride-sharing app.</li>
+                        </ul>
+
+                        <h4>5. Behavioral Questions</h4>
+                        <p>Don't neglect the non-technical part. Prepare stories using the <strong>STAR method</strong> (Situation, Task, Action, Result) for questions like:</p>
+                        <ul>
+                            <li>"Tell me about a time you had a conflict with a coworker."</li>
+                            <li>"Describe a challenging project you worked on."</li>
+                            <li>"Why do you want to work at this company?"</li>
+                        </ul>
+                        <p>Be prepared to discuss your past projects, your role, and the technical decisions you made.</p>
                     </div>
                 </div>
 
+
             </main>
         </div>
-        <p class="text-center text-gray-500 text-xs mt-8">Powered by Pollinations.ai</p>
+        <p class="text-center text-gray-500 text-xs mt-8 pb-4">Powered by Pollinations.ai</p>
     </div>
     
     <!-- Toast Notification -->
@@ -359,6 +457,9 @@
 
 
     <script>
+        // jsPDF setup
+        const { jsPDF } = window.jspdf;
+
         // Shine effect logic
         const container = document.querySelector('.glass-container');
         const shine = document.querySelector('.shine-effect');
@@ -375,12 +476,16 @@
         const pages = {
             home: document.getElementById('home-page'),
             solver: document.getElementById('solver-page'),
-            practice: document.getElementById('practice-page')
+            interview: document.getElementById('interview-prep-page')
         };
 
         function showPage(pageName) {
             Object.values(pages).forEach(page => page.classList.add('hidden'));
-            pages[pageName].classList.remove('hidden');
+            
+            const pageToShow = pages[pageName];
+            pageToShow.classList.remove('hidden');
+            pageToShow.classList.add('page');
+
 
             navLinks.forEach(link => {
                 link.classList.remove('active');
@@ -388,7 +493,6 @@
                     link.classList.add('active');
                 }
             });
-             // When switching pages, stop any ongoing speech synthesis
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
             }
@@ -406,6 +510,7 @@
         // Solver logic
         const solveBtn = document.getElementById('solve-btn');
         const youtubeBtn = document.getElementById('youtube-btn');
+        const pdfBtn = document.getElementById('pdf-btn');
         const problemInput = document.getElementById('problem-number-input');
         const languageSelect = document.getElementById('language-select');
         const responseContainer = document.getElementById('response-container');
@@ -417,8 +522,7 @@
         const ttsBtn = document.getElementById('tts-btn');
         const ttsPlayIcon = document.getElementById('tts-play-icon');
         const ttsStopIcon = document.getElementById('tts-stop-icon');
-        const ttsBtnText = ttsBtn.querySelector('span');
-        let currentUtterance = null; // To hold a reference to the utterance
+        let currentUtterance = null; 
 
 
         async function callLeetCodeAPI(problemNumber, language) {
@@ -445,25 +549,22 @@
 
             if (!problemNumber) {
                 aiResponse.innerHTML = "<p>Please enter a problem number.</p>";
-                responseContainer.classList.remove('hidden');
-                responseContainer.style.opacity = 1;
-                youtubeBtn.classList.add('hidden');
+                responseContainer.classList.remove('hidden', 'visible');
+                responseContainer.classList.add('visible');
                 responseHeader.classList.add('hidden');
                 return;
             }
 
-            // Reset UI for new request
-            speechSynthesis.cancel(); // Stop any previous speech
-            responseContainer.classList.remove('hidden');
+            speechSynthesis.cancel();
+            responseContainer.classList.remove('hidden', 'visible');
             loadingIndicator.classList.remove('hidden');
             aiResponse.classList.add('hidden');
-            youtubeBtn.classList.add('hidden');
             responseHeader.classList.add('hidden');
             solveBtn.disabled = true;
             solveBtn.classList.add('opacity-50', 'cursor-not-allowed');
             
             setTimeout(() => {
-                responseContainer.style.opacity = 1;
+                responseContainer.classList.add('visible');
             }, 10);
 
             const responseText = await callLeetCodeAPI(problemNumber, selectedLanguage);
@@ -472,8 +573,6 @@
             aiResponse.innerHTML = converter.makeHtml(responseText);
             aiResponse.classList.remove('hidden');
             
-            // Show YouTube button and response header on success
-            youtubeBtn.classList.remove('hidden');
             responseHeader.classList.remove('hidden');
 
             solveBtn.disabled = false;
@@ -487,144 +586,133 @@
                 window.open(youtubeSearchUrl, '_blank');
             }
         });
+        
+        pdfBtn.addEventListener('click', () => {
+            const problemNumber = problemInput.value.trim() || 'solution';
+            showToast('Generating PDF...');
+            const doc = new jsPDF();
+            
+            // It's better to render the HTML to a canvas first for better PDF quality
+            html2canvas(aiResponse).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                doc.save(`Codex-Solution-${problemNumber}.pdf`);
+            });
+        });
 
         ttsBtn.addEventListener('click', () => {
+            const ttsBtnText = ttsBtn.querySelector('span');
             if (speechSynthesis.speaking) {
-                speechSynthesis.cancel(); // This will trigger the 'onend' event handler
+                speechSynthesis.cancel();
                 return;
             }
 
             const textToSpeak = aiResponse.innerText;
             if (textToSpeak && textToSpeak.trim() !== '') {
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                currentUtterance = utterance; // Keep reference to prevent GC issues
+                currentUtterance = utterance;
                 
                 utterance.onstart = () => {
-                    ttsBtnText.textContent = 'Stop Reading';
                     ttsPlayIcon.classList.add('hidden');
                     ttsStopIcon.classList.remove('hidden');
                 };
 
                 utterance.onend = () => {
-                    ttsBtnText.textContent = 'Read Aloud';
                     ttsPlayIcon.classList.remove('hidden');
                     ttsStopIcon.classList.add('hidden');
-                    currentUtterance = null; // Clear reference
+                    currentUtterance = null;
                 };
                 
                 utterance.onerror = (event) => {
                     console.error('An error occurred during speech synthesis:', event.error || 'Unknown error');
-                    ttsBtnText.textContent = 'Read Aloud';
                     ttsPlayIcon.classList.remove('hidden');
                     ttsStopIcon.classList.add('hidden');
-                    currentUtterance = null; // Clear reference
+                    currentUtterance = null;
                 };
 
                 speechSynthesis.speak(utterance);
             }
         });
 
-        // Practice Arena Logic
-        const suggestProblemBtn = document.getElementById('suggest-problem-btn');
-        const problemTitle = document.getElementById('problem-title');
-        const problemDescription = document.getElementById('problem-description');
-        const codeEditor = document.getElementById('code-editor');
-        const runCodeBtn = document.getElementById('run-code-btn');
-        const problemLoading = document.getElementById('problem-loading');
-        const problemContent = document.getElementById('problem-content');
+        // Interview Prep Logic
+        const getQuestionsBtn = document.getElementById('get-questions-btn');
+        const companyInput = document.getElementById('company-input');
+        const roleInput = document.getElementById('role-input');
+        const questionsContent = document.getElementById('questions-content');
+        const questionsLoading = document.getElementById('questions-loading');
+        const questionsDisplay = document.getElementById('questions-display');
         const toastEl = document.getElementById('toast-notification');
         const toastMessage = document.getElementById('toast-message');
+        const subNavLinks = document.querySelectorAll('.sub-nav-link');
+        const questionsView = document.getElementById('questions-view');
+        const guideView = document.getElementById('guide-view');
 
-        let currentProblem = null;
-
-        async function callRandomProblemAPI() {
-            const apiUrl = `https://text.pollinations.ai/give%20one%20randoem%20comprtivr%20coding%20quesrion%20with%20text%20cases`;
+        async function callInterviewQuestionsListAPI(company, role) {
+            const prompt = `give a list of common interview questions for a ${role} role at ${company}`;
+            const encodedPrompt = encodeURIComponent(prompt);
+            const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
             try {
                 const response = await fetch(apiUrl);
                 if (response.ok) {
                     return await response.text();
                 }
-                return "Error: Could not fetch a random problem.";
+                return "Error: Could not fetch interview questions.";
             } catch (error) {
-                console.error("Random problem API call failed:", error);
-                return "Error: Could not fetch a random problem.";
+                console.error("Interview questions API call failed:", error);
+                return "Error: Could not fetch interview questions.";
             }
-        }
-
-        function parseProblemResponse(text) {
-            text = '\n' + text;
-            const sections = {};
-            const sectionHeaders = {
-                title: /\n(?:## |#|\*\*Title:\*\*|\*\*Problem:\*\*|Problem:|Title:)\s*/i,
-                description: /\n(?:## |#|\*\*Description:\*\*|\*\*Problem Statement:\*\*|Description:)\s*/i,
-                testCases: /\n(?:## |#|\*\*Test Cases:\*\*|\*\*Examples:\*\*|Test Cases:|Examples:|Example:|Input:|Output:)\s*/i,
-            };
-
-            const foundHeaders = Object.keys(sectionHeaders)
-                .map(key => ({ key, match: text.match(sectionHeaders[key]) }))
-                .filter(item => item.match)
-                .map(item => ({ key: item.key, index: item.match.index, rawHeader: item.match[0] }))
-                .sort((a, b) => a.index - b.index);
-
-            if (foundHeaders.length === 0) {
-                return {
-                    title: "Could Not Parse Problem",
-                    description: text.trim(),
-                };
-            }
-
-            for (let i = 0; i < foundHeaders.length; i++) {
-                const currentHeader = foundHeaders[i];
-                const nextHeader = foundHeaders[i + 1];
-                const startIndex = currentHeader.index + currentHeader.rawHeader.length;
-                const endIndex = nextHeader ? nextHeader.index : text.length;
-                sections[currentHeader.key] = text.substring(startIndex, endIndex).trim();
-            }
-
-            const fullDescription = (sections.description || '') + '\n\n' + (sections.testCases || '');
-
-            return {
-                title: sections.title || 'Title Not Found',
-                description: fullDescription.trim(),
-            };
-        }
-
-
-        function displayProblem(problem) {
-            currentProblem = problem;
-            problemTitle.textContent = problem.title;
-            problemDescription.innerHTML = converter.makeHtml(problem.description);
-            codeEditor.value = '';
         }
         
         function showToast(message) {
             toastMessage.textContent = message;
             toastEl.classList.remove('hidden');
-            setTimeout(() => toastEl.classList.remove('opacity-0'), 10); // Fade in
+            setTimeout(() => toastEl.classList.remove('opacity-0'), 10);
             setTimeout(() => {
                 toastEl.classList.add('opacity-0');
-                setTimeout(() => toastEl.classList.add('hidden'), 300); // Fade out
+                setTimeout(() => toastEl.classList.add('hidden'), 300);
             }, 2700);
         }
 
-        suggestProblemBtn.addEventListener('click', async () => {
-            problemContent.classList.add('hidden');
-            problemLoading.classList.remove('hidden');
-            suggestProblemBtn.disabled = true;
-            suggestProblemBtn.classList.add('opacity-50');
+        getQuestionsBtn.addEventListener('click', async () => {
+            const company = companyInput.value.trim();
+            const role = roleInput.value.trim();
 
-            const responseText = await callRandomProblemAPI();
-            const problem = parseProblemResponse(responseText);
-            displayProblem(problem);
+            if (!company || !role) {
+                showToast("Please enter both company and role.");
+                return;
+            }
 
-            problemLoading.classList.add('hidden');
-            problemContent.classList.remove('hidden');
-            suggestProblemBtn.disabled = false;
-            suggestProblemBtn.classList.remove('opacity-50');
+            questionsContent.classList.add('hidden');
+            questionsLoading.classList.remove('hidden');
+            questionsDisplay.classList.remove('visible');
+            getQuestionsBtn.disabled = true;
+            getQuestionsBtn.classList.add('opacity-50');
+
+            const responseText = await callInterviewQuestionsListAPI(company, role);
+            questionsContent.innerHTML = converter.makeHtml(responseText);
+
+            questionsLoading.classList.add('hidden');
+            questionsContent.classList.remove('hidden');
+            setTimeout(() => questionsDisplay.classList.add('visible'), 10);
+            getQuestionsBtn.disabled = false;
+            getQuestionsBtn.classList.remove('opacity-50');
         });
 
-        runCodeBtn.addEventListener('click', () => {
-            showToast('Compiling and running... (Simulated)');
+        subNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                subNavLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                const view = link.dataset.view;
+                if (view === 'questions') {
+                    questionsView.classList.remove('hidden');
+                    guideView.classList.add('hidden');
+                } else {
+                    questionsView.classList.add('hidden');
+                    guideView.classList.remove('hidden');
+                }
+            });
         });
 
 

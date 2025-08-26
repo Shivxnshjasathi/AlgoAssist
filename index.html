@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI LeetCode Solver</title>
+    <title>Codex</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0c0a18;
@@ -69,10 +74,18 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             overflow: hidden; /* Keep for border-radius and shine effect */
-            max-height: 90vh; /* Constrain height to allow scrolling within */
+            height: 100%; /* Full height on mobile */
             display: flex;
             flex-direction: column;
         }
+
+        @media (min-width: 640px) {
+            .glass-container {
+                max-height: 90vh;
+                height: auto;
+            }
+        }
+
 
         main#app-content {
             overflow-y: auto; /* Allow this section to scroll */
@@ -130,7 +143,8 @@
             transition: opacity 0.5s ease-in-out;
         }
 
-        #ai-response pre {
+        /* Styling for Markdown-generated content */
+        .markdown-content pre, #code-editor {
             background-color: #0c0a18;
             border: 1px solid #374151;
             border-radius: 0.75rem;
@@ -142,12 +156,19 @@
             margin-bottom: 1rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
-        #ai-response code {
+        .markdown-content code {
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
             color: #e5e7eb;
             font-size: 0.95rem;
+            background-color: #2d3748;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
         }
-        #ai-response h3 {
+         .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .markdown-content h3 {
             font-size: 1.3rem;
             font-weight: 600;
             margin-top: 1.75rem;
@@ -156,15 +177,15 @@
             border-bottom: 1px solid #4b5563;
             padding-bottom: 0.5rem;
         }
-        #ai-response ul {
+        .markdown-content ul {
             list-style-type: disc;
             padding-left: 1.5rem;
             margin-bottom: 1rem;
         }
-         #ai-response li {
+         .markdown-content li {
             margin-bottom: 0.5rem;
         }
-        #ai-response p {
+        .markdown-content p {
             margin-bottom: 1rem;
             line-height: 1.8;
             font-size: 1.05rem;
@@ -178,28 +199,29 @@
         }
     </style>
 </head>
-<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
+<body class="text-gray-200 flex sm:items-center justify-center p-0 sm:p-4">
     <div class="aurora-background">
         <div class="aurora-shape1"></div>
         <div class="aurora-shape2"></div>
         <div class="aurora-shape3"></div>
     </div>
 
-    <div class="w-full max-w-4xl mx-auto">
-        <div class="glass-container rounded-3xl shadow-2xl">
+    <div class="w-full max-w-4xl mx-auto h-full sm:h-auto">
+        <div class="glass-container rounded-none sm:rounded-3xl shadow-2xl">
             <div class="shine-effect"></div>
             <!-- Navigation -->
             <nav class="p-4 border-b border-white/10 flex-shrink-0">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center space-x-3">
                         <div class="p-2 bg-gray-900/50 rounded-full border border-gray-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-100 tracking-tight">LeetCode Solver</h1>
+                        <h1 class="text-xl font-bold text-gray-100 tracking-tight">Codex</h1>
                     </div>
-                    <div class="flex space-x-2 bg-gray-900/50 p-1 rounded-full border border-gray-700">
-                        <button class="nav-link active px-4 py-2 rounded-full text-sm font-semibold" data-page="home">Home</button>
-                        <button class="nav-link px-4 py-2 rounded-full text-sm font-semibold" data-page="solver">Solver</button>
+                    <div class="flex space-x-1 sm:space-x-2 bg-gray-900/50 p-1 rounded-full border border-gray-700">
+                        <button class="nav-link active px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="home">Home</button>
+                        <button class="nav-link px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="solver">Solver</button>
+                        <button class="nav-link px-3 sm:px-4 py-2 rounded-full text-sm font-semibold" data-page="practice">Practice</button>
                     </div>
                 </div>
             </nav>
@@ -207,17 +229,17 @@
             <!-- Page Content -->
             <main id="app-content">
                 <!-- Home Page (Landing Page) -->
-                <div id="home-page" class="p-6 md:p-10">
+                <div id="home-page" class="p-4 sm:p-6 md:p-10">
                     <div class="text-center">
-                        <h2 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">Your Personal AI LeetCode Assistant</h2>
-                        <p class="mt-6 text-lg leading-8 text-gray-300">Stuck on a problem? Get comprehensive, step-by-step solution guides instantly. Understand the logic, explore different approaches, and master data structures and algorithms.</p>
-                        <div class="mt-10 flex items-center justify-center gap-x-6">
+                        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">Your Personal AI Coding Assistant</h2>
+                        <p class="mt-4 sm:mt-6 text-base sm:text-lg leading-8 text-gray-300">Stuck on a problem? Get comprehensive, step-by-step solution guides instantly. Understand the logic, explore different approaches, and master data structures and algorithms.</p>
+                        <div class="mt-8 sm:mt-10 flex items-center justify-center gap-x-6">
                             <button id="start-solving-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 shadow-lg shadow-indigo-600/30">
                                 Start Solving Now
                             </button>
                         </div>
                     </div>
-                    <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                         <div class="feature-card p-6 bg-gray-900/30 rounded-2xl border border-white/10">
                             <h3 class="text-lg font-semibold text-indigo-300">Detailed Explanations</h3>
                             <p class="mt-2 text-gray-400">Don't just get the code. Understand the 'why' behind every line with detailed explanations.</p>
@@ -234,7 +256,7 @@
                 </div>
 
                 <!-- Solver Page -->
-                <div id="solver-page" class="p-6 md:p-8 hidden">
+                <div id="solver-page" class="p-4 sm:p-6 md:p-8 hidden">
                     <div class="space-y-6">
                         <div class="relative">
                             <label for="problem-number-input" class="block text-sm font-medium text-gray-400 mb-2">LeetCode Problem Number</label>
@@ -286,13 +308,55 @@
                                 <span class="ml-2 text-sm font-medium">Read Aloud</span>
                             </button>
                         </div>
-                        <div id="ai-response" class="text-gray-300 leading-relaxed max-w-none"></div>
+                        <div id="ai-response" class="text-gray-300 leading-relaxed max-w-none markdown-content"></div>
                     </div>
                 </div>
+                
+                <!-- Practice Page -->
+                <div id="practice-page" class="p-4 sm:p-6 md:p-8 hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold text-white">Practice Arena</h2>
+                        <div class="flex items-center space-x-4 w-full sm:w-auto">
+                             <button id="run-code-btn" class="w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-xl transition duration-300 ease-in-out flex items-center justify-center">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                 Run Code
+                             </button>
+                            <button id="suggest-problem-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl transition duration-300 ease-in-out flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m10.4 12.6-1.8 2.4 1.8 2.4"></path><path d="m13.6 17.4 1.8-2.4-1.8-2.4"></path></svg>
+                                New Problem
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="problem-display" class="mb-6 p-6 bg-gray-900/30 rounded-2xl border border-white/10">
+                        <div id="problem-loading" class="hidden items-center space-x-2">
+                            <div class="ai-thinking-dot"></div>
+                            <div class="ai-thinking-dot"></div>
+                            <div class="ai-thinking-dot"></div>
+                            <span class="text-gray-400">Finding a new problem for you...</span>
+                        </div>
+                        <div id="problem-content" class="markdown-content">
+                            <h3 id="problem-title" class="text-xl font-semibold text-indigo-300">Welcome!</h3>
+                            <div id="problem-description" class="mt-2 text-gray-400">Click the "New Problem" button to get a random coding challenge.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="code-editor" class="block text-sm font-medium text-gray-400 mb-2">Your Solution</label>
+                        <textarea id="code-editor" class="w-full h-64 bg-gray-900/70 border border-gray-700 rounded-xl p-4 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Write your code here..."></textarea>
+                    </div>
+                </div>
+
             </main>
         </div>
         <p class="text-center text-gray-500 text-xs mt-8">Powered by Pollinations.ai</p>
     </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed top-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 hidden transition-opacity duration-300">
+        <p id="toast-message"></p>
+    </div>
+
 
     <script>
         // Shine effect logic
@@ -310,7 +374,8 @@
         const navLinks = document.querySelectorAll('.nav-link');
         const pages = {
             home: document.getElementById('home-page'),
-            solver: document.getElementById('solver-page')
+            solver: document.getElementById('solver-page'),
+            practice: document.getElementById('practice-page')
         };
 
         function showPage(pageName) {
@@ -334,6 +399,9 @@
         });
         
         document.getElementById('start-solving-btn').addEventListener('click', () => showPage('solver'));
+
+        // Markdown Converter
+        const converter = new showdown.Converter();
 
         // Solver logic
         const solveBtn = document.getElementById('solve-btn');
@@ -370,22 +438,6 @@
                 return "An error occurred while trying to contact the AI. Please check your network connection and try again.";
             }
         }
-        
-        function formatResponse(text) {
-            let html = text;
-            html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-                const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;").trim();
-                return `<pre><code>${escapedCode}</code></pre>`;
-            });
-            html = html.replace(/^## (.*$)/gim, '<h3>$1</h3>');
-            html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
-            html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>').replace(/<\/li>\n<ul>/g, '</li><li>');
-            html = html.replace(/^(?!<h3|<ul|<pre|<li)(.*$)/gim, (match) => {
-                if (match.trim() === '') return '';
-                return `<p>${match}</p>`;
-            });
-            return html;
-        }
 
         solveBtn.addEventListener('click', async () => {
             const problemNumber = problemInput.value.trim();
@@ -417,7 +469,7 @@
             const responseText = await callLeetCodeAPI(problemNumber, selectedLanguage);
             
             loadingIndicator.classList.add('hidden');
-            aiResponse.innerHTML = formatResponse(responseText);
+            aiResponse.innerHTML = converter.makeHtml(responseText);
             aiResponse.classList.remove('hidden');
             
             // Show YouTube button and response header on success
@@ -461,9 +513,7 @@
                 };
                 
                 utterance.onerror = (event) => {
-                    // Log the specific error property for better debugging
                     console.error('An error occurred during speech synthesis:', event.error || 'Unknown error');
-                    // Reset button state on error
                     ttsBtnText.textContent = 'Read Aloud';
                     ttsPlayIcon.classList.remove('hidden');
                     ttsStopIcon.classList.add('hidden');
@@ -472,6 +522,109 @@
 
                 speechSynthesis.speak(utterance);
             }
+        });
+
+        // Practice Arena Logic
+        const suggestProblemBtn = document.getElementById('suggest-problem-btn');
+        const problemTitle = document.getElementById('problem-title');
+        const problemDescription = document.getElementById('problem-description');
+        const codeEditor = document.getElementById('code-editor');
+        const runCodeBtn = document.getElementById('run-code-btn');
+        const problemLoading = document.getElementById('problem-loading');
+        const problemContent = document.getElementById('problem-content');
+        const toastEl = document.getElementById('toast-notification');
+        const toastMessage = document.getElementById('toast-message');
+
+        let currentProblem = null;
+
+        async function callRandomProblemAPI() {
+            const apiUrl = `https://text.pollinations.ai/give%20one%20randoem%20comprtivr%20coding%20quesrion%20with%20text%20cases`;
+            try {
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    return await response.text();
+                }
+                return "Error: Could not fetch a random problem.";
+            } catch (error) {
+                console.error("Random problem API call failed:", error);
+                return "Error: Could not fetch a random problem.";
+            }
+        }
+
+        function parseProblemResponse(text) {
+            text = '\n' + text;
+            const sections = {};
+            const sectionHeaders = {
+                title: /\n(?:## |#|\*\*Title:\*\*|\*\*Problem:\*\*|Problem:|Title:)\s*/i,
+                description: /\n(?:## |#|\*\*Description:\*\*|\*\*Problem Statement:\*\*|Description:)\s*/i,
+                testCases: /\n(?:## |#|\*\*Test Cases:\*\*|\*\*Examples:\*\*|Test Cases:|Examples:|Example:|Input:|Output:)\s*/i,
+            };
+
+            const foundHeaders = Object.keys(sectionHeaders)
+                .map(key => ({ key, match: text.match(sectionHeaders[key]) }))
+                .filter(item => item.match)
+                .map(item => ({ key: item.key, index: item.match.index, rawHeader: item.match[0] }))
+                .sort((a, b) => a.index - b.index);
+
+            if (foundHeaders.length === 0) {
+                return {
+                    title: "Could Not Parse Problem",
+                    description: text.trim(),
+                };
+            }
+
+            for (let i = 0; i < foundHeaders.length; i++) {
+                const currentHeader = foundHeaders[i];
+                const nextHeader = foundHeaders[i + 1];
+                const startIndex = currentHeader.index + currentHeader.rawHeader.length;
+                const endIndex = nextHeader ? nextHeader.index : text.length;
+                sections[currentHeader.key] = text.substring(startIndex, endIndex).trim();
+            }
+
+            const fullDescription = (sections.description || '') + '\n\n' + (sections.testCases || '');
+
+            return {
+                title: sections.title || 'Title Not Found',
+                description: fullDescription.trim(),
+            };
+        }
+
+
+        function displayProblem(problem) {
+            currentProblem = problem;
+            problemTitle.textContent = problem.title;
+            problemDescription.innerHTML = converter.makeHtml(problem.description);
+            codeEditor.value = '';
+        }
+        
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toastEl.classList.remove('hidden');
+            setTimeout(() => toastEl.classList.remove('opacity-0'), 10); // Fade in
+            setTimeout(() => {
+                toastEl.classList.add('opacity-0');
+                setTimeout(() => toastEl.classList.add('hidden'), 300); // Fade out
+            }, 2700);
+        }
+
+        suggestProblemBtn.addEventListener('click', async () => {
+            problemContent.classList.add('hidden');
+            problemLoading.classList.remove('hidden');
+            suggestProblemBtn.disabled = true;
+            suggestProblemBtn.classList.add('opacity-50');
+
+            const responseText = await callRandomProblemAPI();
+            const problem = parseProblemResponse(responseText);
+            displayProblem(problem);
+
+            problemLoading.classList.add('hidden');
+            problemContent.classList.remove('hidden');
+            suggestProblemBtn.disabled = false;
+            suggestProblemBtn.classList.remove('opacity-50');
+        });
+
+        runCodeBtn.addEventListener('click', () => {
+            showToast('Compiling and running... (Simulated)');
         });
 
 

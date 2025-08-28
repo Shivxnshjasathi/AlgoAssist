@@ -95,19 +95,19 @@
         }
 
         /* Custom Scrollbar Styling */
-        main#app-content::-webkit-scrollbar {
+        main#app-content::-webkit-scrollbar, .chat-messages::-webkit-scrollbar {
             width: 8px;
         }
-        main#app-content::-webkit-scrollbar-track {
+        main#app-content::-webkit-scrollbar-track, .chat-messages::-webkit-scrollbar-track {
             background: transparent;
         }
-        main#app-content::-webkit-scrollbar-thumb {
+        main#app-content::-webkit-scrollbar-thumb, .chat-messages::-webkit-scrollbar-thumb {
             background-color: rgba(99, 102, 241, 0.5);
             border-radius: 10px;
             border: 2px solid transparent;
             background-clip: content-box;
         }
-        main#app-content::-webkit-scrollbar-thumb:hover {
+        main#app-content::-webkit-scrollbar-thumb:hover, .chat-messages::-webkit-scrollbar-thumb:hover {
             background-color: rgba(99, 102, 241, 0.8);
         }
 
@@ -248,6 +248,50 @@
              color: #c4b5fd;
         }
 
+        /* --- CHATBOT STYLES --- */
+        #chatbot-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        #chatbot-fab:hover {
+            transform: scale(1.1);
+        }
+        #chatbot-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 90vw;
+            max-width: 400px;
+            height: 70vh;
+            max-height: 600px;
+            z-index: 999;
+            transform: translateY(20px) scale(0.95);
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            pointer-events: none;
+        }
+        #chatbot-container.visible {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .message {
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #4f46e5;
+            color: white;
+            align-self: flex-end;
+        }
+        .ai-message {
+            background-color: #374151;
+            color: #e5e7eb;
+            align-self: flex-start;
+        }
+
     </style>
 </head>
 <body class="text-gray-200 flex sm:items-center justify-center p-0 sm:p-4">
@@ -265,7 +309,7 @@
                 <div class="flex justify-between items-center">
                     <div class="flex items-center space-x-3">
                         <div class="p-2 bg-gray-900/50 rounded-full border border-gray-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                         </div>
                         <h1 class="text-xl font-bold text-gray-100 tracking-tight">Codex</h1>
                     </div>
@@ -311,11 +355,11 @@
                 <div id="solver-page" class="page p-4 sm:p-6 md:p-8 hidden">
                     <div class="space-y-6">
                         <div class="relative">
-                            <label for="problem-number-input" class="block text-sm font-medium text-gray-400 mb-2">LeetCode Problem Number</label>
+                            <label for="problem-number-input" class="block text-sm font-medium text-gray-400 mb-2">LeetCode Problem Number or Title</label>
                             <div class="absolute inset-y-0 left-0 top-7 flex items-center pl-4 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><hash class="lucide lucide-hash" /><path d="M4 9h16"/><path d="M4 15h16"/><path d="M9 4v16"/><path d="M15 4v16"/></svg>
                             </div>
-                            <input type="text" id="problem-number-input" class="w-full bg-gray-900/70 border border-gray-700 rounded-xl p-4 pl-11 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                            <input type="text" id="problem-number-input" placeholder="e.g., 1 or Two Sum" class="w-full bg-gray-900/70 border border-gray-700 rounded-xl p-4 pl-11 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
                         </div>
 
                         <div class="relative">
@@ -368,7 +412,7 @@
                 </div>
                 
                 <!-- Interview Prep Page -->
-                <div id="interview-prep-page" class="page p-4 sm:p-6 md:p-8 hidden">
+                <div id="interview-page" class="page p-4 sm:p-6 md:p-8 hidden">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <h2 class="text-2xl font-bold text-white">Interview Prep</h2>
                         <div class="flex space-x-2 border-b border-gray-700 self-start sm:self-center">
@@ -456,16 +500,21 @@
             <!-- Bottom Navigation (for Mobile) -->
             <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-sm border-t border-white/10 p-2 flex justify-around items-center">
                 <button class="nav-link mobile-nav-link flex flex-col items-center justify-center text-gray-400 w-full py-1 rounded-lg" data-page="home">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     <span class="text-xs font-medium mt-1">Home</span>
                 </button>
                 <button class="nav-link mobile-nav-link flex flex-col items-center justify-center text-gray-400 w-full py-1 rounded-lg" data-page="solver">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                     <span class="text-xs font-medium mt-1">Solver</span>
                 </button>
                 <button class="nav-link mobile-nav-link flex flex-col items-center justify-center text-gray-400 w-full py-1 rounded-lg" data-page="interview">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M12 14c-2.76 0-5 2.24-5 5h10c0-2.76-2.24-5-5-5Z"/><path d="M19 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19 12c-2.76 0-5 2.24-5 5h.5a3.5 3.5 0 0 1 3.5-3.5 3.5 3.5 0 0 1 3.5 3.5H22c0-2.76-2.24-5-5-5Z"/><path d="M5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M5 12c-2.76 0-5 2.24-5 5h.5a3.5 3.5 0 0 1 3.5-3.5A3.5 3.5 0 0 1 10.5 17H12c0-2.76-2.24-5-5-5Z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M12 14c-2.76 0-5 2.24-5 5h10c0-2.76-2.24-5-5-5Z"/><path d="M19 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19 12c-2.76 0-5 2.24-5 5h.5a3.5 3.5 0 0 1 3.5-3.5 3.5 3.5 0 0 1 3.5 3.5H22c0-2.76-2.24-5-5-5Z"/><path d="M5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M5 12c-2.76 0-5 2.24-5 5h.5a3.5 3.5 0 0 1 3.5-3.5A3.5 3.5 0 0 1 10.5 17H12c0-2.76-2.24-5-5-5Z"/></svg>
                     <span class="text-xs font-medium mt-1">Interview</span>
+                </button>
+                <!-- New Chatbot Button for Mobile -->
+                <button id="mobile-chat-btn" class="flex flex-col items-center justify-center text-gray-400 w-full py-1 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></svg>
+                    <span class="text-xs font-medium mt-1">Chat</span>
                 </button>
             </nav>
         </div>
@@ -475,6 +524,38 @@
     <!-- Toast Notification -->
     <div id="toast-notification" class="fixed top-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 hidden transition-opacity duration-300">
         <p id="toast-message"></p>
+    </div>
+
+    <!-- Chatbot Floating Action Button (Desktop) -->
+    <button id="chatbot-fab" class="hidden sm:block bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></svg>
+    </button>
+
+    <!-- Chatbot UI -->
+    <div id="chatbot-container" class="glass-container rounded-2xl shadow-2xl flex flex-col">
+        <!-- Chat Header -->
+        <div class="flex-shrink-0 p-4 border-b border-white/10 flex justify-between items-center">
+            <h3 class="font-bold text-lg">AI Assistant</h3>
+            <button id="close-chatbot-btn" class="text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto flex flex-col">
+            <!-- Example Message -->
+            <div class="message ai-message p-3 rounded-lg">
+                Hello! How can I help you today?
+            </div>
+        </div>
+        <!-- Input Form -->
+        <div class="flex-shrink-0 p-4 border-t border-white/10">
+            <form id="chat-input-form" class="flex items-center space-x-2">
+                <input type="text" id="chat-input" class="w-full bg-gray-900/70 border border-gray-700 rounded-lg p-3 text-gray-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ask a question...">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </form>
+        </div>
     </div>
 
 
@@ -499,18 +580,20 @@
         const pages = {
             home: document.getElementById('home-page'),
             solver: document.getElementById('solver-page'),
-            interview: document.getElementById('interview-prep-page')
+            interview: document.getElementById('interview-page')
         };
 
         function showPage(pageName) {
             Object.values(pages).forEach(page => page.classList.add('hidden'));
             
             const pageToShow = pages[pageName];
-            pageToShow.classList.remove('hidden');
-            // We re-add the animation class each time to trigger it
-            pageToShow.classList.remove('page');
-            void pageToShow.offsetWidth; // Trigger reflow
-            pageToShow.classList.add('page');
+            if (pageToShow) {
+                pageToShow.classList.remove('hidden');
+                // We re-add the animation class each time to trigger it
+                pageToShow.classList.remove('page');
+                void pageToShow.offsetWidth; // Trigger reflow
+                pageToShow.classList.add('page');
+            }
 
 
             navLinks.forEach(link => {
@@ -575,15 +658,15 @@
             const selectedLanguage = languageSelect.value;
 
             if (!problemNumber) {
-                aiResponse.innerHTML = "<p>Please enter a problem number.</p>";
-                responseContainer.classList.remove('hidden', 'visible');
-                responseContainer.classList.add('visible');
+                aiResponse.innerHTML = "<p>Please enter a problem number or title.</p>";
+                responseContainer.classList.remove('hidden');
+                setTimeout(() => responseContainer.classList.add('visible'), 10);
                 responseHeader.classList.add('hidden');
                 return;
             }
 
             speechSynthesis.cancel();
-            responseContainer.classList.remove('hidden', 'visible');
+            responseContainer.classList.remove('hidden');
             loadingIndicator.classList.remove('hidden');
             aiResponse.classList.add('hidden');
             responseHeader.classList.add('hidden');
@@ -617,17 +700,62 @@
         pdfBtn.addEventListener('click', () => {
             const problemNumber = problemInput.value.trim() || 'solution';
             showToast('Generating PDF...');
-            const doc = new jsPDF();
-            
-            // It's better to render the HTML to a canvas first for better PDF quality
-            html2canvas(aiResponse).then(canvas => {
+            const contentToCapture = aiResponse;
+
+            // Store original styles
+            const originalStyle = contentToCapture.style.cssText;
+
+            // Temporarily apply styles for PDF generation
+            contentToCapture.style.backgroundColor = '#0c0a18';
+            contentToCapture.style.color = '#e5e7eb';
+            contentToCapture.style.padding = '20px';
+
+            html2canvas(contentToCapture, {
+                scale: 2,
+                scrollY: -window.scrollY,
+                windowHeight: contentToCapture.scrollHeight,
+                backgroundColor: '#0c0a18' // Ensure canvas background is dark
+            }).then(canvas => {
+                // Revert styles immediately after capture
+                contentToCapture.style.cssText = originalStyle;
+
                 const imgData = canvas.toDataURL('image/png');
-                const pdfWidth = doc.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                doc.save(`Codex-Solution-${problemNumber}.pdf`);
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+
+                const pdf = new jsPDF({
+                    orientation: 'p',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const ratio = imgHeight / imgWidth;
+                const scaledImgHeight = pdfWidth * ratio;
+
+                let heightLeft = scaledImgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position -= pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                pdf.save(`Codex-Solution-${problemNumber}.pdf`);
+            }).catch(err => {
+                // Ensure styles are reverted even if there's an error
+                contentToCapture.style.cssText = originalStyle;
+                console.error("Error generating PDF:", err);
+                showToast("Failed to generate PDF.");
             });
         });
+
 
         ttsBtn.addEventListener('click', () => {
             if (speechSynthesis.speaking) {
@@ -676,7 +804,7 @@
         const guideView = document.getElementById('guide-view');
 
         async function callInterviewQuestionsListAPI(company, role) {
-            const prompt = `give a list of common interview questions for a ${role} role at ${company}`;
+            const prompt = `Give a list of common interview questions for a ${role} role at ${company}. Structure the response with clear headings for different question types like "Technical Questions", "Behavioral Questions", etc.`;
             const encodedPrompt = encodeURIComponent(prompt);
             const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
             try {
@@ -739,6 +867,79 @@
                     guideView.classList.remove('hidden');
                 }
             });
+        });
+
+        // --- CHATBOT LOGIC ---
+        const chatbotFab = document.getElementById('chatbot-fab');
+        const mobileChatBtn = document.getElementById('mobile-chat-btn');
+        const chatbotContainer = document.getElementById('chatbot-container');
+        const closeChatbotBtn = document.getElementById('close-chatbot-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInputForm = document.getElementById('chat-input-form');
+        const chatInput = document.getElementById('chat-input');
+
+        function toggleChatbot() {
+            chatbotContainer.classList.toggle('visible');
+        }
+
+        chatbotFab.addEventListener('click', toggleChatbot);
+        mobileChatBtn.addEventListener('click', toggleChatbot);
+        closeChatbotBtn.addEventListener('click', toggleChatbot);
+
+        function addChatMessage(message, sender) {
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('message', 'p-3', 'rounded-lg');
+            if (sender === 'user') {
+                messageEl.classList.add('user-message');
+                messageEl.textContent = message;
+            } else {
+                messageEl.classList.add('ai-message');
+                // Use innerHTML for AI messages to render markdown
+                messageEl.innerHTML = converter.makeHtml(message);
+            }
+            chatMessages.appendChild(messageEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function callChatbotAPI(prompt) {
+            const encodedPrompt = encodeURIComponent(prompt);
+            const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+            try {
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    return await response.text();
+                }
+                return "Sorry, I couldn't get a response. Please try again.";
+            } catch (error) {
+                console.error("Chatbot API call failed:", error);
+                return "Sorry, there was an error connecting to the AI.";
+            }
+        }
+        
+        chatInputForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = chatInput.value.trim();
+            if (!userInput) return;
+
+            addChatMessage(userInput, 'user');
+            chatInput.value = '';
+            
+            // Add thinking indicator
+            const thinkingEl = document.createElement('div');
+            thinkingEl.classList.add('message', 'ai-message', 'p-3', 'rounded-lg', 'flex', 'items-center', 'space-x-2');
+            thinkingEl.innerHTML = `
+                <div class="ai-thinking-dot"></div>
+                <div class="ai-thinking-dot"></div>
+                <div class="ai-thinking-dot"></div>
+            `;
+            chatMessages.appendChild(thinkingEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const aiResponseText = await callChatbotAPI(userInput);
+            
+            // Remove thinking indicator and add AI response
+            thinkingEl.remove();
+            addChatMessage(aiResponseText, 'ai');
         });
 
 
